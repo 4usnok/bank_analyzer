@@ -5,20 +5,20 @@ from src.reports import function_for_generating
 import pandas as pd
 
 # Проверка модуля views для задания: Веб-страницы
-stock_processing('2023-10-15')
-cur_proc('2023-10-15')
+# stock_processing('2023-10-15')
+# cur_proc('2023-10-15')
 
 # Проверка модуля home_page для задания: Веб-страницы
-main_home_page()
+# main_home_page()
 
 # Проверка модуля services для задания: Сервисы
-path_to_file = "../data/operations.xlsx"  # путь к xlsx
-favorable_categories_of_increased_cashback(10, 2021, path_to_file)
+# path_to_file = "../data/operations.xlsx"  # путь к xlsx
+# favorable_categories_of_increased_cashback(10, 2021, path_to_file)
 
 # Проверка модуля reports для задания: Отчеты
-df_orders = pd.read_excel("../data/operations.xlsx")
-function_for_generating(
-    df_orders,
-    'Различные товары',
-    '31.12.2021 16:44:00'
-)
+# df_orders = pd.read_excel("../data/operations.xlsx")
+# function_for_generating(
+#     df_orders,
+#     'Различные товары',
+#     '31.12.2021 16:44:00'
+# )
