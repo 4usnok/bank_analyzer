@@ -1,0 +1,22 @@
+[
+    {
+        "success": true,
+        "timestamp": 1696204799,
+        "historical": true,
+        "base": "EUR",
+        "date": "2023-10-01",
+        "rates": {
+            "EUR": 1
+        }
+    },
+    {
+        "success": true,
+        "timestamp": 1696204799,
+        "historical": true,
+        "base": "EUR",
+        "date": "2023-10-01",
+        "rates": {
+            "RUB": 103.522609
+        }
+    }
+]
