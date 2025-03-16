@@ -15,10 +15,12 @@ def function_for_generating(
     transactions: pd.DataFrame, category: str, date: Optional[str] = None
 ) -> str:
     """
-    Функция для формирования отчёта по транзакциям в определённой категории за последние три месяца.
+    Функция для формирования отчёта по транзакциям
+    в определённой категории за последние три месяца.
     """
     logging.info(
-        f"Начало выполнения функции reports_func для категории '{category}' и даты '{date}'"
+        f"Начало выполнения функции reports_func "
+        f"для категории '{category}' и даты '{date}'"
     )
 
     # Если дата передана, фильтруем транзакции за последние три месяца
@@ -30,7 +32,8 @@ def function_for_generating(
             days=90
         )  # Примерно 90 дней для трёх месяцев
         logging.info(
-            f"Текущая дата: {current_date}, три месяца назад: {three_months_ago}"
+            f"Текущая дата: {current_date}, "
+            f"три месяца назад: {three_months_ago}"
         )
 
         # Фильтруем транзакции по указанной категории
@@ -38,10 +41,12 @@ def function_for_generating(
             transactions["Категория"] == category
         ].copy()
         logging.info(
-            f"Найдено {len(filtering_by_category)} записей по категории '{category}'"
+            f"Найдено {len(filtering_by_category)} "
+            f"записей по категории '{category}'"
         )
 
-        # Преобразуем столбец 'Дата операции' в формат datetime для корректного сравнения дат
+        # Преобразуем столбец 'Дата операции' в формат
+        # datetime для корректного сравнения дат
         filtering_by_category.loc[:, "Дата операции"] = pd.to_datetime(
             filtering_by_category["Дата операции"], format="%d.%m.%Y %H:%M:%S"
         )
@@ -58,33 +63,48 @@ def function_for_generating(
         # Если данные найдены, преобразуем их в JSON
         if not filtering_by_date.empty:
             result_json = filtering_by_date.to_json(
-                orient="records", force_ascii=False, date_format="iso", indent=4
+                orient="records",
+                force_ascii=False,
+                date_format="iso",
+                indent=4
             )
             logging.info("Успешно сформирован JSON с данными")
             return result_json
         else:
-            # Если данные не найдены, возвращаем сообщение об ошибке в формате JSON
+            # Если данные не найдены, возвращаем
+            # сообщение об ошибке в формате JSON
             error_message = {
-                "error": f"Данные по категории '{category}' за последние три месяца не найдены."
+                "error": f"Данные по категории '{category}' "
+                         f"за последние три месяца не найдены."
             }
             logging.warning(f"Данные не найдены: {error_message}")
-            return json.dumps(error_message, ensure_ascii=False, indent=4)
+            return json.dumps(error_message,
+                              ensure_ascii=False,
+                              indent=4
+                              )
     else:
         # Если дата не передана, фильтруем только по категории
-        filtering_by_category = transactions[transactions["Категория"] == category]
+        filtering_by_category = transactions[
+            transactions["Категория"] == category
+        ]
         logging.info(
-            f"Найдено {len(filtering_by_category)} записей по категории '{category}'"
+            f"Найдено {len(filtering_by_category)} "
+            f"записей по категории '{category}'"
         )
 
         # Если данные найдены, преобразуем их в JSON
         if not filtering_by_category.empty:
             result_json = filtering_by_category.to_json(
-                orient="records", force_ascii=False, date_format="iso", indent=4
+                orient="records",
+                force_ascii=False,
+                date_format="iso",
+                indent=4
             )
             logging.info("Успешно сформирован JSON с данными")
             return result_json
         else:
-            # Если категория не найдена, возвращаем сообщение об ошибке в формате JSON
+            # Если категория не найдена,
+            # возвращаем сообщение об ошибке в формате JSON
             error_message = {"error": f"Категория '{category}' не найдена."}
             logging.warning(f"Категория не найдена: {error_message}")
             return json.dumps(error_message, ensure_ascii=False, indent=4)

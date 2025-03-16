@@ -14,9 +14,8 @@ logging.basicConfig(
 )
 
 
-# В данном модуле, мы должны получить словарь, ключи и значения которого, будут браться из местных функций
 def greetings() -> None:
-    """Функция выводит сообщение приветствия, в зависимости от периода времени"""
+    """Функция выводит приветствие, в зависимости от периода времени"""
     dt_now = datetime.now()
     time_now = dt_now.time()  # Получаем текущее время
     # Определяем временные диапазоны
@@ -54,10 +53,10 @@ def for_each_card() -> None:
 
         # Проверка наличия нужных столбцов
         required_columns = ["Номер карты", "Сумма операции с округлением"]
-        missing_columns = [col for col in required_columns if col not in df.columns]
+        mis_col = [col for col in required_columns if col not in df.columns]
 
-        if missing_columns:
-            raise ValueError(f"Отсутствуют столбцы: {missing_columns}")
+        if mis_col:
+            raise ValueError(f"Отсутствуют столбцы: {mis_col}")
 
         # Выбор нужных строк и столбцов
         # Предполагаем, что данные начинаются со второй строки (индекс 1)
@@ -89,7 +88,7 @@ def top_trans() -> None:
     top_trans_list = []
     # Собираем все транзакции в список
     try:
-        for row in range(2, sheet.max_row + 1):  # данные начинаются со второй строки
+        for row in range(2, sheet.max_row + 1):  # данные со второй строки
             tr_date = sheet.cell(
                 row=row, column=2
             ).value  # [2] - номер столбца - "date"
@@ -122,7 +121,8 @@ def top_trans() -> None:
 def exchange_rates() -> None:
     """Функция выводит курс валют"""
     exchange_rates_list = []
-    # Обработка json файла из которого будем брать необходимые данные апи, чтобы лишний раз не тратить вызовы
+    # Обработка json файла из которого будем брать
+    # необходимые данные апи, чтобы лишний раз не тратить вызовы
     try:
         with open("../work_file_cur.json", "r", encoding="utf-8") as file:
             data_file = json.load(file)
@@ -151,7 +151,7 @@ def stock_prices() -> None:
         list_from_the_dict = data_file.get("user_stocks", [])
         # Проверяем, что список акций не пустой
         if not list_from_the_dict:
-            raise ValueError("Список акций 'user_stocks' пуст или отсутствует в файле.")
+            raise ValueError("'user_stocks' пуст или отсутствует в файле.")
         # Формируем список с данными о ценах акций
         for one_stock in list_from_the_dict:
             # Получаем текущую цену акции

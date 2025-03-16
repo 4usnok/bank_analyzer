@@ -23,7 +23,8 @@ def favorable_categories_of_increased_cashback(month, year, path_to_xlsx):
         # Проход по строкам
         for row in range(2, sheet.max_row + 1):
             # Чтение данных из ячеек
-            cat_find = sheet.cell(row=row, column=10).value  # Категория (столбец J)
+            cat_find = sheet.cell(row=row,
+                                  column=10).value  # Категория (столбец J)
             pay_find = sheet.cell(
                 row=row, column=13
             ).value  # Процент кешбэка (столбец M)
@@ -40,8 +41,9 @@ def favorable_categories_of_increased_cashback(month, year, path_to_xlsx):
             # Преобразование даты
             try:
                 dt_object = datetime.strptime(date_find, "%d.%m.%Y")
-            except ValueError as e:
-                logging.error(f"Ошибка в строке {row}: некорректная дата '{date_find}'")
+            except ValueError:
+                logging.error(f"Ошибка в строке {row}: "
+                              f"некорректная дата '{date_find}'")
                 continue
 
             # Проверка месяца и года
@@ -53,9 +55,12 @@ def favorable_categories_of_increased_cashback(month, year, path_to_xlsx):
                 if cat_find in result_dict:
                     result_dict[
                         cat_find
-                    ] += cashback  # Суммируем кешбэк для существующей категории
+                    ] += cashback  # Суммируем кешбэк
+                    # для существующей категории
+
                 else:
-                    result_dict[cat_find] = cashback  # Добавляем новую категорию
+                    # Добавляем новую категорию
+                    result_dict[cat_find] = cashback
 
         # Преобразуем результат в JSON
         result_json = json.dumps(result_dict, ensure_ascii=False, indent=4)
