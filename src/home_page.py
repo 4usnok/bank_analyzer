@@ -14,28 +14,26 @@ logging.basicConfig(
 )
 
 
-def greetings() -> None:
+def greetings(current_time=None):
     """Функция выводит приветствие, в зависимости от периода времени"""
-    dt_now = datetime.now()
-    time_now = dt_now.time()  # Получаем текущее время
+    if current_time is None:
+        current_time = datetime.now().time()
+
     # Определяем временные диапазоны
     morning_start = time(6, 0, 0)
     day_start = time(12, 0, 0)
     evening_start = time(18, 0, 0)
     night_start = time(0, 0, 0)
+
     # Определяем, какое сейчас время суток и выводим соответствующее сообщение
-    if night_start <= time_now < morning_start:
-        period_of_day = "Доброй ночи"
-        return period_of_day
-    elif morning_start <= time_now < day_start:
-        period_of_day = "Доброе утро"
-        return period_of_day
-    elif day_start <= time_now < evening_start:
-        period_of_day = "Добрый день"
-        return period_of_day
-    elif evening_start <= time_now or time_now < night_start:
-        period_of_day = "Добрый вечер"
-        return period_of_day
+    if night_start <= current_time < morning_start:
+        return "Доброй ночи"
+    elif morning_start <= current_time < day_start:
+        return "Доброе утро"
+    elif day_start <= current_time < evening_start:
+        return "Добрый день"
+    elif evening_start <= current_time or current_time < night_start:
+        return "Добрый вечер"
 
 
 def for_each_card() -> None:
