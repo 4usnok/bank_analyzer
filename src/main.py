@@ -1,30 +1,28 @@
-from src.views import cur_proc, stock_processing
-from src.home_page import main_home_page
-from src.services import favorable_categories_of_increased_cashback
-from src.reports import function_for_generating
+import os
+
 import pandas as pd
-from unittest.mock import patch, MagicMock
-import openpyxl
+from dotenv import load_dotenv
+
+from src.home_page import main_home_page
+from src.reports import function_for_generating
+from src.services import favorable_categories_of_increased_cashback
+from src.views import cur_proc, stock_processing
+
+load_dotenv()
+
+path_to_xlsx = os.getenv("PATH_TO_XLSX")
 
 # Проверка модуля views для задания: Веб-страницы
-# stock_processing('2023-10-15')
-print(cur_proc('2023-10-15'))
-
-# Проверка модуля home_page для задания: Веб-страницы
-# main_home_page()
+stock_processing('2023-10-15')
+cur_proc('2023-10-15')
 
 # Проверка модуля services для задания: Сервисы
-# path_to_file = "data/operations.xlsx"  # путь к xlsx
-# favorable_categories_of_increased_cashback(10, 2021, path_to_file)
+print(favorable_categories_of_increased_cashback(10, 2021, path_to_xlsx))
 
 # Проверка модуля reports для задания: Отчеты
-# df_orders = pd.read_excel("data/operations.xlsx")
-# function_for_generating(
-#     df_orders,
-#     'Различные товары',
-#     '31.12.2021 16:44:00'
-# )
-
-# Получить абсолютный путь к файлу
-# file_path = os.path.abspath(os.path.join(os.path.dirname(__file__), 'data/operations.xlsx'))
-# print(file_path)
+df_orders = pd.read_excel(path_to_xlsx)
+print(function_for_generating(
+    df_orders,
+    'Различные товары',
+    '31.12.2021 16:44:00'
+))

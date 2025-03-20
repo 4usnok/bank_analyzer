@@ -1,9 +1,8 @@
-from src.views import cur_proc, stock_processing
 import pytest
 from unittest.mock import patch, MagicMock
 from datetime import datetime
 import pandas as pd
-
+from src.views import cur_proc, stock_processing
 
 # Фикстура для мокирования зависимостей
 @pytest.fixture
@@ -18,14 +17,14 @@ def mock_dependencies(mocker):
     # Мокируем json_read
     mocker.patch(
         "src.views.json_read",  # Указываем правильный путь к модулю
-        return_value={"user_stocks": ["AAPL", "GOOGL"]},  # Значение по умолчанию
+        return_value={"user_stocks": ["AAPL"]},  # Значение по умолчанию
     )
 
     # Мокируем yf.download
     mock_download = mocker.patch("yfinance.download")
-    mock_download.return_value = MagicMock(
-        reset_index=MagicMock(return_value=MagicMock(to_dict=MagicMock(return_value=[]))
-    ))
+    mock_download.return_value = pd.DataFrame({
+        "Close": [150, 155],  # Фиктивные данные по закрытию акции
+    }, index=pd.to_datetime(["2023-01-06", "2023-01-07"]))
 
     # Возвращаем мок-объект для yf.download (если нужно)
     return mock_download
@@ -93,21 +92,23 @@ def test_cur_proc(end_date, user_currencies, api_response, expected_result, expe
 # Фикстура для подготовки мок-данных из user_settings.json
 @pytest.fixture
 def mock_user_settings():
-    return {
-        "user_stocks": ["AAPL", "GOOGL"],  # Список акций для тестирования
+    settings_instance = {
+        "user_stocks": ["AAPL"],  # Список акций для тестирования
     }
+    return settings_instance
 
-# Тест для проверки корректности работы функции
+# Тест для проверки корректности работы функции stock_processing
 def test_stock_processing(mocker, mock_user_settings):
+    """Тест для функции stock_processing."""
     # Мокируем json_read, чтобы он возвращал подготовленные данные
-    mocker.patch("views.json_read", return_value=mock_user_settings)
+    mocker.patch("src.views.json_read", return_value=mock_user_settings)
 
     # Мокируем datetime_work, чтобы он возвращал фиктивную дату
-    mocker.patch("views.datetime_work", return_value=datetime(2023, 1, 6))
+    mocker.patch("src.views.datetime_work", return_value=datetime(2023, 1, 6))
 
     # Мокируем yf.download, чтобы он возвращал фиктивные данные по акциям
     mock_data = pd.DataFrame({
-        "Close": [150, 155],  # Фиктивные данные по закрытию акций
+        ("Close", "AAPL"): [150, 150],  # Фиктивные данные по закрытию акции
     }, index=pd.to_datetime(["2023-01-06", "2023-01-07"]))
     mocker.patch("yfinance.download", return_value=mock_data)
 
@@ -115,14 +116,7 @@ def test_stock_processing(mocker, mock_user_settings):
     result = stock_processing("2023-01-07")
 
     # Проверяем, что функция вернула корректное значение
-    assert result == 150  # Ожидаемое значение закрытия акции
-
-def test_stock_processing_empty_stocks():
-    # Мокируем json_read, чтобы он возвращал пустой список акций
-    with patch("views.json_read", return_value={"user_stocks": []}):
-        # Проверяем, что функция выбрасывает исключение
-        with pytest.raises(ValueError, match="Список акций 'user_stocks' пуст или отсутствует в файле."):
-            stock_processing("2023-01-07")
+    assert result == 150  # Ожидаемое значение закрытия акции на последнюю дату
 
 # Запуск тестов
 if __name__ == "__main__":

@@ -1,9 +1,15 @@
 import json
 import logging
+import os
 from datetime import timedelta
 from typing import Optional
 
 import pandas as pd
+from dotenv import load_dotenv
+
+load_dotenv()
+
+path_to_xlsx = os.getenv("PATH_TO_XLSX")
 
 # Настройка логгирования: вывод сообщений в консоль с уровнем INFO
 logging.basicConfig(
