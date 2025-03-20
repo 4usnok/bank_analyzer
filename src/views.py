@@ -79,33 +79,34 @@ def stock_processing(end_date: str):
     # из модуля utils.py
     # для чтения файла json с настройками
     start_date_obj = datetime_work("2023-01-06")
-    start_date = start_date_obj.strftime(
-        "%Y-%m-%d"
-    )  # Преобразуем start_date обратно в строку (если нужно)
+    start_date = start_date_obj.strftime("%Y-%m-%d")  # Преобразуем start_date обратно в строку (если нужно)
 
     # Воспользуемся функцией json_read
     # из модуля utils.py для чтения файла json с настройками
     data_file = json_read(path_to_set)
+    if data_file is None:
+        raise FileNotFoundError("Файл настроек не найден или содержит некорректный JSON.")
 
     # Получаем список акций
     list_from_the_dict = data_file.get("user_stocks", [])
-    for one_stocks in list_from_the_dict:
-        # Проверяем, что список акций не пустой
-        if not list_from_the_dict:
-            raise ValueError("Список акций 'user_stocks' пуст "
-                             "или отсутствует в файле.")
-            # Итерируемся по каждой акции в списке
+    if not list_from_the_dict:
+        raise ValueError("Список акций 'user_stocks' пуст или отсутствует в файле.")
+
+    # Итерируемся по каждой акции в списке
+    for one_stock in list_from_the_dict:
         # Формируем API-запрос
-        data = yf.download(one_stocks, start=start_date, end=end_date)
+        data = yf.download(one_stock, start=start_date, end=end_date)
         data_dict = data.reset_index().to_dict(orient="records")
+
         # Загружаем данные по акции для всего диапазона дат
-        ticker = one_stocks  # Пример тикера
+        ticker = one_stock  # Пример тикера
         results = {  # Создаем структуру JSON
             "stock": ticker,
             "data": data_dict,  # Используем преобразованный список словарей
         }
 
-        return results["data"][0][("Close", one_stocks)]
+        # Возвращаем цену закрытия для первой записи
+        return results["data"][0]["Close"]
 
 def greetings(current_time=None):
     """Функция выводит приветствие, в зависимости от периода времени"""
