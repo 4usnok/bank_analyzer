@@ -19,7 +19,7 @@ path_to_work_cur = os.getenv("PATH_TO_WORK_CUR") # "work_file_cur.json"
 def cur_proc(end_date: str):
     """Функция обращается к API и обрабатывает валюты"""
     # Преобразуем строку в объект datetime
-    end_date = datetime.strptime(end_date, "%Y-%m-%d")
+    end_date = datetime.strptime(end_date, "%Y-%m-%d %H:%M:%S")
     start_date = end_date.replace(
         day=1
     )  # Начальная дата — первое число месяца конечной даты
@@ -40,7 +40,7 @@ def cur_proc(end_date: str):
 
     # Генерируем список дат от start_date до end_date
     current_date = start_date
-    date_str = current_date.strftime("%Y-%m-%d")  # Преобразуем дату в строку
+    date_str = current_date.strftime("%Y-%m-%d %H:%M:%S")  # Преобразуем дату в строку
     # Итерируемся по каждой валюте в списке
     for cur_from_the_dict in list_from_the_dict:
         # Воспользуемся функцией request_api из utils
@@ -78,8 +78,8 @@ def stock_processing(end_date: str):
     # Воспользуемся функцией datetime_work
     # из модуля utils.py
     # для чтения файла json с настройками
-    start_date_obj = datetime_work("2023-01-06")
-    start_date = start_date_obj.strftime("%Y-%m-%d")  # Преобразуем start_date обратно в строку (если нужно)
+    start_date_obj = datetime_work("2021-12-17 13:13:13")
+    start_date = start_date_obj.strftime("%Y-%m-%d %H:%M:%S")  # Преобразуем start_date обратно в строку (если нужно)
 
     # Воспользуемся функцией json_read
     # из модуля utils.py для чтения файла json с настройками
@@ -106,7 +106,7 @@ def stock_processing(end_date: str):
         }
 
         # Возвращаем цену закрытия для первой записи
-        return results["data"][0]["Close"]
+        return results["data"][0]
 
 def greetings(current_time=None):
     """Функция выводит приветствие, в зависимости от периода времени"""
@@ -179,7 +179,7 @@ def top_trans() -> None:
     # Собираем все транзакции в список
     try:
         for row in range(2, sheet.max_row + 1):  # данные со второй строки
-            tr_date = sheet.cell(row=row, column=2).value  # [2] - номер столбца - "date"
+            tr_date = sheet.cell(row=row, column=1).value  # [2] - номер столбца - "date"
             tr_amount = sheet.cell(row=row, column=5).value  # [5] - номер столбца - "amount"
             tr_category = sheet.cell(row=row, column=10).value  # [10] - номер столбца - "category"
             tr_description = sheet.cell(row=row, column=12).value  # [12] - номер столбца - "description"
@@ -206,6 +206,9 @@ def exchange_rates() -> None:
     # Обработка json файла из которого будем брать
     # необходимые данные апи, чтобы лишний раз не тратить вызовы
     try:
+        data_file = json_read(path_to_set)
+        # Получаем список валют
+        list_from_the_dict = data_file.get("user_currencies", [])
         with open(path_to_work_cur, "r", encoding="utf-8") as file:
             data_file = json.load(file)
             # Раскроем список
