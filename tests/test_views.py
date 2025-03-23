@@ -2,341 +2,201 @@ import pytest
 from unittest.mock import patch, MagicMock, mock_open
 from datetime import datetime, time
 import pandas as pd
-from src.views import cur_proc, stock_processing, greetings, stock_prices, exchange_rates, top_trans, for_each_card
+from src.views import greetings, for_each_card, top_trans, cur_proc, stock_processing, main_views
 import json
 
-# Фикстура для мокирования зависимостей
-@pytest.fixture
-def mock_dependencies(mocker):
-    """Фикстура для мокирования зависимостей."""
-    # Мокируем datetime_work
-    mocker.patch(
-        "src.views.datetime_work",  # Указываем правильный путь к модулю
-        return_value=datetime(2023, 1, 6),
-    )
-
-    # Мокируем json_read
-    mocker.patch(
-        "src.views.json_read",  # Указываем правильный путь к модулю
-        return_value={"user_stocks": ["AAPL"]},  # Значение по умолчанию
-    )
-
-    # Мокируем yf.download
-    mock_download = mocker.patch("yfinance.download")
-    mock_download.return_value = pd.DataFrame({
-        "Close": [150, 155],  # Фиктивные данные по закрытию акции
-    }, index=pd.to_datetime(["2023-01-06", "2023-01-07"]))
-
-    # Возвращаем мок-объект для yf.download (если нужно)
-    return mock_download
-
-# Тесты для функции cur_proc
+# Тестирование функции greetings
 @pytest.mark.parametrize(
-    "end_date, user_currencies, api_response, expected_result, expected_error",
+    "time_str, expected_greeting",
     [
-        # Успешный сценарий
-        (
-            "2023-10-15",  # end_date
-            ["USD", "EUR"],  # user_currencies
-            [
-                MagicMock(status_code=200, json=lambda: {"data": {"USD": 1.0}}),
-                MagicMock(status_code=200, json=lambda: {"data": {"EUR": 0.85}}),
-            ],  # api_response
-            [{"data": {"USD": 1.0}}, {"data": {"EUR": 0.85}}],  # expected_result
-            None,  # expected_error
-        ),
-        # Пустой список валют
-        (
-            "2023-10-15",  # end_date
-            [],  # user_currencies
-            [],  # api_response
-            None,  # expected_result
-            ValueError,  # expected_error
-        ),
-        # Ошибка API
-        (
-            "2023-10-15",  # end_date
-            ["USD", "EUR"],  # user_currencies
-            [
-                MagicMock(status_code=500, json=lambda: {"error": "Internal Server Error"}),
-                MagicMock(status_code=500, json=lambda: {"error": "Internal Server Error"}),
-            ],  # api_response
-            [],  # expected_result
-            None,  # expected_error
-        ),
+        ("2023-10-15 00:00:00", "Доброй ночи"),  # Граничное значение (начало ночи)
+        ("2023-10-15 03:00:00", "Доброй ночи"),  # Ночь
+        ("2023-10-15 05:59:59", "Доброй ночи"),  # Граничное значение (конец ночи)
+        ("2023-10-15 06:00:00", "Доброе утро"),  # Граничное значение (начало утра)
+        ("2023-10-15 08:00:00", "Доброе утро"),  # Утро
+        ("2023-10-15 11:59:59", "Доброе утро"),  # Граничное значение (конец утра)
+        ("2023-10-15 12:00:00", "Добрый день"),  # Граничное значение (начало дня)
+        ("2023-10-15 15:00:00", "Добрый день"),  # День
+        ("2023-10-15 17:59:59", "Добрый день"),  # Граничное значение (конец дня)
+        ("2023-10-15 18:00:00", "Добрый вечер"),  # Граничное значение (начало вечера)
+        ("2023-10-15 20:00:00", "Добрый вечер"),  # Вечер
+        ("2023-10-15 23:59:59", "Добрый вечер"),  # Граничное значение (конец вечера)
     ],
 )
-def test_cur_proc(end_date, user_currencies, api_response, expected_result, expected_error):
-    """Тест для функции cur_proc с параметризацией."""
-    # Мокируем чтение файла user_settings.json
-    with patch(
-        "src.views.json_read",  # Указываем правильный путь к модулю
-        return_value={"user_currencies": user_currencies},
-    ):
-        # Мокируем запросы к API
-        with patch("requests.get") as mock_get:
-            # Настраиваем мок-ответы для каждого запроса
-            mock_get.side_effect = api_response
+def test_greetings(time_str, expected_greeting):
+    """Тест для функции greetings с параметризацией."""
+    result = greetings(time_str)
+    assert result == expected_greeting
 
-            # Если ожидается ошибка, проверяем, что она возникает
-            if expected_error:
-                with pytest.raises(expected_error):
-                    cur_proc(end_date)
-            else:
-                # Вызываем функцию и проверяем результат
-                result = cur_proc(end_date)
-                assert result == expected_result
+# Тест для проверки обработки некорректных данных
+def test_greetings_invalid_input():
+    """Тест для проверки обработки некорректных данных."""
+    with pytest.raises(ValueError):
+        greetings("неправильный формат времени")
 
-                # Проверяем, что requests.get был вызван нужное количество раз
-                assert mock_get.call_count == len(user_currencies)
+# Тестирование функции for_each_card
+TEST_DATA = pd.DataFrame({
+    "Дата операции": ["15.10.2023 12:00:00", "15.10.2023 14:00:00", "16.10.2023 10:00:00"],
+    "Номер карты": ["1234567890123456", "9876543210987654", "1111222233334444"],
+    "Сумма операции с округлением": [1000, 500, 200],
+})
 
-# Фикстура для подготовки мок-данных из user_settings.json
-@pytest.fixture
-def mock_user_settings():
-    settings_instance = {
-        "user_stocks": ["AAPL"],  # Список акций для тестирования
-    }
-    return settings_instance
-
-# Тест для проверки корректности работы функции stock_processing
-def test_stock_processing(mocker):
-    """Тест для функции stock_processing."""
-    # Мокируем json_read, чтобы он возвращал фиктивные данные
-    mock_user_settings = {"user_stocks": ["AAPL"]}
-    mocker.patch("src.views.json_read", return_value=mock_user_settings)
-
-    # Мокируем datetime_work, чтобы он возвращал фиктивную дату
-    mocker.patch("src.views.datetime_work", return_value=datetime(2023, 1, 6))
-
-    # Мокируем yf.download, чтобы он возвращал фиктивные данные по акциям
-    mock_data = pd.DataFrame({
-        "Close": [150, 155],  # Фиктивные данные по закрытию акции
-    }, index=pd.to_datetime(["2023-01-06", "2023-01-07"]))
-    mocker.patch("yfinance.download", return_value=mock_data)
-
-    # Вызываем тестируемую функцию
-    result = stock_processing("2023-01-07")
-
-    # Проверяем результат
-    assert result == 150  # Ожидаемое значение цены закрытия
-
-# Запуск тестов
-if __name__ == "__main__":
-    pytest.main([__file__, "-v"])
-
-# Тест greetings
-# Фикстура для тестирования разных временных диапазонов
-@pytest.fixture(params=[
-    (time(2, 0, 0), "Доброй ночи"),  # Ночь
-    (time(8, 0, 0), "Доброе утро"),  # Утро
-    (time(14, 0, 0), "Добрый день"),  # День
-    (time(20, 0, 0), "Добрый вечер"),  # Вечер
-])
-def time_and_greeting(request):
-    return request.param
-
-# Тест, который использует фикстуру
-def test_greetings(time_and_greeting):
-    current_time, expected_greeting = time_and_greeting
-    assert greetings(current_time) == expected_greeting
-
-# Тест stock_prices
-
-# Фикстура для мокирования чтения файла user_settings.json
-@pytest.fixture
-def mock_user_settings(mocker):
-    # Тестовые данные
-    test_data = {"user_stocks": ["AAPL", "GOOGL"]}
-
-    # Мокируем чтение файла
-    mocker.patch("builtins.open", mocker.mock_open(read_data=json.dumps(test_data)))
-
-# Фикстура для мокирования yfinance.Ticker
-@pytest.fixture
-def mock_yfinance(mocker):
-    # Мокируем yfinance.Ticker
-    mock_ticker = mocker.Mock()
-    mock_ticker.history.return_value = pd.DataFrame({"Close": [150.0]})
-    mocker.patch("yfinance.Ticker", return_value=mock_ticker)
-
-# Тест для проверки корректного выполнения функции
-def test_stock_prices_success(mock_user_settings, mock_yfinance):
-    # Ожидаемый результат
-    expected_result = [
-        {"stock": "AAPL", "price": 150},
-        {"stock": "GOOGL", "price": 150},
-    ]
-    # Вызываем функцию и проверяем результат
-    result = stock_prices()
-    assert result == expected_result
-
-# Тест для проверки ошибки при пустом списке акций
-def test_stock_prices_empty_stocks(mocker):
-    # Тестовые данные с пустым списком акций
-    test_data = {"user_stocks": []}
-    # Мокируем чтение файла
-    mocker.patch("builtins.open", mocker.mock_open(read_data=json.dumps(test_data)))
-    # Вызываем функцию и проверяем, что она возвращает пустой список
-    result = stock_prices()
-    assert result == []
-
-# Тест для проверки ошибки при чтении файла
-def test_stock_prices_file_error(mocker):
-    # Мокируем чтение файла с ошибкой
-    mocker.patch("builtins.open", side_effect=Exception("Ошибка чтения файла"))
-    # Вызываем функцию и проверяем, что она возвращает пустой список
-    result = stock_prices()
-    assert result == []
-
-# Тест для проверки ошибки при получении данных от yfinance
-def test_stock_prices_yfinance_error(mocker):
-    # Тестовые данные
-    test_data = {"user_stocks": ["AAPL"]}
-    # Мокируем чтение файла
-    mocker.patch("builtins.open", mocker.mock_open(read_data=json.dumps(test_data)))
-    # Мокируем yfinance.Ticker с ошибкой
-    mock_ticker = mocker.Mock()
-    mock_ticker.history.side_effect = Exception("Ошибка получения данных")
-    mocker.patch("yfinance.Ticker", return_value=mock_ticker)
-    # Вызываем функцию и проверяем, что она возвращает пустой список
-    result = stock_prices()
-    assert result == []
-
-# Тест exchange_rates
-@pytest.fixture
-def mock_fixture(mocker):
-    # Мокируем json файл
-    mock_data = [
-        {
-            "base": "USD",
-            "date": "2021-03-17",
-            "rates": {
-                "EUR": 0.813399,
-                "GBP": 0.72007,
-                "JPY": 107.346001
-            },
-            "timestamp": 1519296206
-        }
-    ]
-    # Используем patch с mock_open
-    with patch("builtins.open", mock_open(read_data=json.dumps(mock_data))):
-        yield
-
-def test_exchange_rates_file_not_found(mocker):
-    # Мокируем open, чтобы вызвать FileNotFoundError
-    mocker.patch("builtins.open", side_effect=FileNotFoundError("Файл не найден"))
-    # Вызываем функцию
-    result = exchange_rates()
-    # Ожидаемый результат (пустой список)
-    assert result == []
-
-def test_exchange_rates_invalid_json(mocker):
-    # Мокируем open, чтобы вернуть невалидный JSON
-    mocker.patch("builtins.open", mock_open(read_data="invalid json"))
-    # Вызываем функцию
-    result = exchange_rates()
-    # Ожидаемый результат (пустой список)
-    assert result == []
-
-def test_exchange_rates(mocker):
-    # Мокируем данные файла
-    mock_data = [
-        {
-            "base": "USD",
-            "date": "2021-03-17",
-            "rates": {
-                "EUR": 0.813399,
-                "GBP": 0.72007,
-                "JPY": 107.346001
-            },
-            "timestamp": 1519296206
-        }
-    ]
-    # Мокируем open и json.load
-    mocker.patch("builtins.open", mock_open(read_data=json.dumps(mock_data)))
-    # Вызываем функцию
-    result = exchange_rates()
-    # Ожидаемый результат
-    expected_result = [
-        {
-            "currency": "USD",
-            "rate": {
-                "EUR": 0.813399,
-                "GBP": 0.72007,
-                "JPY": 107.346001
-            }
-        }
-    ]
-    # Проверяем результат
-    assert result == expected_result
-
-# Тест top_trans
-@pytest.fixture
-def mock_excel_file(mocker):
-    """Фикстура для мокирования Excel-файла."""
-    # Создаем мок-лист
-    mock_sheet = MagicMock()
-    mock_sheet.max_row = 6  # Указываем количество строк
-    mock_sheet.cell.side_effect = lambda row, col: MagicMock(
-        value={
-            2: f"2023-10-{row}",  # Дата
-            5: row * 100,          # Сумма
-            10: f"Category {row}", # Категория
-            12: f"Description {row}", # Описание
-        }[col]
-    )
-    # Создаем мок-книгу
-    mock_workbook = MagicMock()
-    mock_workbook.active = mock_sheet
-    # Мокируем openpyxl.load_workbook
-    mocker.patch("openpyxl.load_workbook", return_value=mock_workbook)
-    # Возвращаем мок-объект книги (если нужно)
-    return mock_workbook
-
-def test_top_trans_invalid_data(mocker):
-    """Тест для обработки ошибок в данных."""
-    # Создаем мок-лист с некорректными данными
-    mock_sheet = MagicMock()
-    mock_sheet.max_row = 2
-    mock_sheet.cell.side_effect = lambda row, col: MagicMock(
-        value={
-            2: None,  # Некорректная дата
-            5: "invalid",  # Некорректная сумма
-            10: None,  # Некорректная категория
-            12: None,  # Некорректное описание
-        }[col]
-    )
-    # Создаем мок-книгу
-    mock_workbook = MagicMock()
-    mock_workbook.active = mock_sheet
-    # Мокируем openpyxl.load_workbook
-    mocker.patch("openpyxl.load_workbook", return_value=mock_workbook)
-    # Вызываем функцию
-    result = top_trans()
-    # Ожидаемый результат (пустой список)
-    assert result == []
-
-# Тест for_each_card
-@pytest.fixture
-def mock_excel_file():
-    """Фикстура для мокирования Excel-файла."""
-    # Тестовые данные
-    data = {
-        "Номер карты": ["1234567890123456", "9876543210987654", "1111222233334444"],
-        "Сумма операции с округлением": [1000, 500, 300],
-    }
-    # Создаем DataFrame с тестовыми данными
-    df = pd.DataFrame(data)
-
-    # Мокируем pd.read_excel, чтобы возвращать тестовый DataFrame
-    with patch("pandas.read_excel", return_value=df):
-        yield
-def test_for_each_card_missing_columns(mock_excel_file):
-    """Тест для обработки ошибок (отсутствие столбцов)."""
-    # Мокируем pd.read_excel, чтобы возвращать DataFrame без нужных столбцов
+def test_for_each_card_no_data():
+    """Тест для случая, когда данные отсутствуют."""
+    # Мокируем pd.read_excel, чтобы возвращать пустой DataFrame
     with patch("pandas.read_excel", return_value=pd.DataFrame()):
-        # Вызываем функцию
-        result = for_each_card()
+        # Вызываем функцию с тестовой датой
+        result = for_each_card("2023-10-15 12:00:00")
+
         # Ожидаемый результат (пустой список)
         assert result == []
-        
+
+
+def test_for_each_card_invalid_data():
+    """Тест для случая с некорректными данными."""
+    # Мокируем pd.read_excel, чтобы возвращать DataFrame с некорректными данными
+    invalid_data = pd.DataFrame({
+        "Дата операции": ["15.10.2023 12:00:00"],
+        "Номер карты": [None],  # Некорректные данные
+        "Сумма операции с округлением": ["invalid"],  # Некорректные данные
+    })
+    with patch("pandas.read_excel", return_value=invalid_data):
+        # Вызываем функцию с тестовой датой
+        result = for_each_card("2023-10-15 12:00:00")
+
+        # Ожидаемый результат (пустой список, так как данные некорректны)
+        assert result == []
+
+# Тестирование функции top_trans
+# Подготовим DataFrame для тестирования
+TEST_DATA = pd.DataFrame({
+    "Дата платежа": ["01.10.2023 12:00:00", "15.10.2023 14:00:00", "16.10.2023 10:00:00", "20.10.2023 18:00:00"],
+    "Сумма операции с округлением": [1000, 500, 200, 1500],
+    "Категория": ["Еда", "Транспорт", "Развлечения", "Еда"],
+    "Описание": ["Обед", "Такси", "Кино", "Ужин"],
+})
+
+
+def test_top_trans_no_data():
+    """Тест для случая, когда данные отсутствуют."""
+    # Мокируем pd.read_excel, чтобы возвращать пустой DataFrame
+    with patch("pandas.read_excel", return_value=pd.DataFrame()):
+        # Вызываем функцию с тестовой датой
+        result = top_trans("02.10.2023 12:00:00")
+
+        # Ожидаемый результат (пустой список)
+        assert result == []
+
+# Тестирование функции cur_proc
+FAKE_API_RESPONSE_USD = {
+    "success": True,
+    "timestamp": 1697308800,
+    "base": "EUR",
+    "date": "2023-10-15",
+    "rates": {
+        "USD": 1.05,
+    }
+}
+
+FAKE_API_RESPONSE_GBP = {
+    "success": True,
+    "timestamp": 1697308800,
+    "base": "EUR",
+    "date": "2023-10-15",
+    "rates": {
+        "GBP": 0.85,
+    }
+}
+
+def test_cur_proc():
+    """Тест для функции cur_proc с успешным ответом от API."""
+    # Мокируем requests.get, чтобы возвращать фиктивные ответы от API
+    with patch("requests.get") as mock_get:
+        # Настраиваем мок-ответы для каждого запроса
+        mock_response_usd = MagicMock()
+        mock_response_usd.json.return_value = FAKE_API_RESPONSE_USD
+
+        mock_response_gbp = MagicMock()
+        mock_response_gbp.json.return_value = FAKE_API_RESPONSE_GBP
+
+        # Настраиваем side_effect для последовательных вызовов
+        mock_get.side_effect = [mock_response_usd, mock_response_gbp]
+
+        # Мокируем json_read, чтобы возвращать фиктивные валюты
+        with patch("src.views.json_read", return_value={"user_currencies": ["USD", "GBP"]}):
+            # Мокируем obj_datetime, чтобы возвращать фиктивную дату
+            with patch("src.views.obj_datetime", return_value=datetime(2023, 10, 15, 12, 0, 0)):
+                # Вызываем функцию с тестовой датой
+                result = cur_proc("2023-10-15 12:00:00")
+
+                # Ожидаемый результат
+                expected_result = [
+                    {"currency": "USD", "rate": 1.05},
+                    {"currency": "GBP", "rate": 0.85},
+                ]
+
+                # Проверяем результат
+                assert result == expected_result
+
+# Тестирование функции stock_processing
+FAKE_STOCK_DATA = {
+    "Close": [150.0, 155.0],  # Цены закрытия
+}
+
+def test_stock_processing():
+    """Тест для функции stock_processing с успешным ответом от API."""
+    # Мокируем, чтобы возвращать фиктивные данные
+    with patch("yfinance.Ticker") as mock_ticker:
+        # Настраиваем мок-объект
+        mock_stock = MagicMock()
+        mock_stock.history.return_value = MagicMock(
+            iterrows=lambda: [
+                (datetime(2023, 10, 15), {"Close": 150.0}),
+                (datetime(2023, 10, 16), {"Close": 155.0}),
+            ]
+        )
+        mock_ticker.return_value = mock_stock
+
+        # Мокируем json_read, чтобы возвращать фиктивные акции
+        with patch("src.views.json_read", return_value={"user_stocks": ["AAPL", "GOOGL"]}):
+            # Мокируем obj_datetime, чтобы возвращать фиктивную дату
+            with patch("src.views.obj_datetime", return_value=datetime(2023, 10, 15, 12, 0, 0)):
+                # Вызываем функцию с тестовой датой
+                result = stock_processing("2023-10-15 12:00:00")
+
+                # Ожидаемый результат
+                expected_result = [
+                    {"stock": "AAPL", "price": 150.0},
+                    {"stock": "AAPL", "price": 155.0},
+                    {"stock": "GOOGL", "price": 150.0},
+                    {"stock": "GOOGL", "price": 155.0},
+                ]
+
+                # Проверяем результат
+                assert result == expected_result
+
+# Тестирование функции main_views
+def test_main_views():
+    """Тест для функции main_home_page."""
+    # Мокируем все зависимости
+    with patch("src.views.greetings", return_value="Добрый день") as mock_greetings, \
+         patch("src.views.for_each_card", return_value=[{"card": "1234", "spent": 1000}]) as mock_cards, \
+         patch("src.views.top_trans", return_value=[{"transaction": "top1", "amount": 500}]) as mock_top_trans, \
+         patch("src.views.cur_proc", return_value=[{"currency": "USD", "rate": 1.05}]) as mock_cur_proc, \
+         patch("src.views.stock_processing", return_value=[{"stock": "AAPL", "price": 150.0}]) as mock_stock_processing:
+
+        # Вызываем функцию с тестовым временем
+        result = main_views("2023-10-15 12:00:00")
+
+        # Ожидаемый результат
+        expected_response = {
+            "greeting": "Добрый день",
+            "cards": [{"card": "1234", "spent": 1000}],
+            "top_transactions": [{"transaction": "top1", "amount": 500}],
+            "currency_rates": [{"currency": "USD", "rate": 1.05}],
+            "stock_prices": [{"stock": "AAPL", "price": 150.0}],
+        }
+        expected_result = json.dumps(expected_response, ensure_ascii=False, indent=4)
+
+        # Проверяем результат
+        assert result == expected_result

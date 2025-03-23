@@ -1,13 +1,29 @@
 import json
 import logging
 from datetime import datetime
+import os
 
 import openpyxl
 
+path_to_logs = os.getenv("PATH_TO_LOGS")  # "../logs/app.log"
+
 # Настройка логирования
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+services_logger = logging.getLogger("services")
+# Проверка и создание директории для логов, если она не существует
+log_directory = os.path.dirname(path_to_logs)
+if not os.path.exists(log_directory):
+    os.makedirs(log_directory)
+# Обработчик для записи логов в файл
+file_handler = logging.FileHandler(path_to_logs, mode="a", encoding="utf-8")
+file_formater = logging.Formatter("%(asctime)s - %(name)s: %(funcName)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formater)  # Исправлено: передаем file_formater
+services_logger.addHandler(file_handler)
+# Обработчик для вывода логов в консоль (опционально)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(file_formater)
+services_logger.addHandler(console_handler)
+# Установка уровня логирования
+services_logger.setLevel(logging.DEBUG)
 
 
 def favorable_categories_of_increased_cashback(month, year, path_to_xlsx):

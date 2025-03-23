@@ -20,15 +20,22 @@ path_to_logs = os.getenv("PATH_TO_LOGS")  # "../logs/app.log"
 base_url = os.getenv("BASE_URL")
 
 # Настройка логирования
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[
-        logging.FileHandler(path_to_logs, mode="w"),  # Логи в файл (перезаписываем файл)
-        logging.StreamHandler(),  # Логи в консоль
-    ],
-)
-logging.info("Логирование настроено.")
+views_logger = logging.getLogger("views")
+# Проверка и создание директории для логов, если она не существует
+log_directory = os.path.dirname(path_to_logs)
+if not os.path.exists(log_directory):
+    os.makedirs(log_directory)
+# Обработчик для записи логов в файл
+file_handler = logging.FileHandler(path_to_logs, mode="w", encoding="utf-8")
+file_formater = logging.Formatter("%(asctime)s - %(name)s: %(funcName)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formater)  # Исправлено: передаем file_formater
+views_logger.addHandler(file_handler)
+# Обработчик для вывода логов в консоль (опционально)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(file_formater)
+views_logger.addHandler(console_handler)
+# Установка уровня логирования
+views_logger.setLevel(logging.DEBUG)
 
 
 def greetings(time_str: str) -> str:
@@ -115,7 +122,6 @@ def top_trans(end_date: str) -> list:
 def cur_proc(date_str: str):
     """Функция API валют"""
     logging.info(f"Получение курсов валют для даты: {date_str}")
-
     # В функции `cur_proc` использовал https://fixer.io/
     def exchange_rates():
         """Функция выводит курс валют"""
@@ -145,7 +151,6 @@ def stock_processing(date_str: str) -> list:
     """Функция API акций"""
     # В функции `stock_processing` использовал https://finance.yahoo.com/
     logging.info(f"Получение данных акций для даты: {date_str}")
-
     def stock_prices():
         """Функция выводит стоимость акций из S&P500."""
         list_stock = []
@@ -171,7 +176,7 @@ def stock_processing(date_str: str) -> list:
     return stock_prices()
 
 
-def main_home_page(time_str: str) -> str:
+def main_views(time_str: str) -> str:
     """Управляющая функция."""
     logging.info(f"Запуск управляющей функции для времени: {time_str}")
     greeting = greetings(time_str)

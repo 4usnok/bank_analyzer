@@ -9,12 +9,27 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-path_to_xlsx = os.getenv("PATH_TO_XLSX")
+# Переменные окружения
+path_to_xlsx = os.getenv("PATH_TO_XLSX")  # "data/operations.xlsx"
+path_to_logs = os.getenv("PATH_TO_LOGS")  # "../logs/app.log"
 
-# Настройка логгирования: вывод сообщений в консоль с уровнем INFO
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
-)
+# Настройка логирования
+reports_logger = logging.getLogger("reports")
+# Проверка и создание директории для логов, если она не существует
+log_directory = os.path.dirname(path_to_logs)
+if not os.path.exists(log_directory):
+    os.makedirs(log_directory)
+# Обработчик для записи логов в файл
+file_handler = logging.FileHandler(path_to_logs, mode="w", encoding="utf-8")
+file_formater = logging.Formatter("%(asctime)s - %(name)s: %(funcName)s - %(levelname)s: %(message)s")
+file_handler.setFormatter(file_formater)  # Исправлено: передаем file_formater
+reports_logger.addHandler(file_handler)
+# Обработчик для вывода логов в консоль (опционально)
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(file_formater)
+reports_logger.addHandler(console_handler)
+# Установка уровня логирования
+reports_logger.setLevel(logging.DEBUG)
 
 
 def function_for_generating(
