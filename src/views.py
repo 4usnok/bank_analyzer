@@ -3,7 +3,6 @@ import logging
 import os
 from datetime import time, timedelta
 
-import openpyxl
 import pandas as pd
 import requests
 import yfinance as yf
@@ -17,8 +16,8 @@ load_dotenv(dotenv_path="../.env")
 api_key = os.getenv("API_KEY_CUR")
 path_to_set = os.getenv("PATH_TO_US_SET")  # "user_settings.json"
 path_to_xlsx = os.getenv("PATH_TO_XLSX")  # "data/operations.xlsx"
-path_to_work_cur = os.getenv("PATH_TO_WORK_CUR")  # "work_file_cur.json"
 path_to_logs = os.getenv("PATH_TO_LOGS")  # "../logs/app.log"
+base_url = os.getenv("BASE_URL")
 
 # Настройка логирования
 logging.basicConfig(
@@ -129,7 +128,7 @@ def cur_proc(date_str: str):
         # Используем функцию json_read из utils
         js_read = json_read(path_to_set)
         for cur in js_read["user_currencies"]:
-            url = f"http://data.fixer.io/api/{target_date}?access_key={api_key}&base=EUR&symbols={cur}"
+            url = f"{base_url}{target_date}?{api_key}&base=EUR&symbols={cur}"
             # К сожалению, базовой функцией по условиям подписки, стала EUR
             response = requests.get(url)
             result = response.json()
