@@ -339,3 +339,4 @@ def test_for_each_card_missing_columns(mock_excel_file):
         result = for_each_card()
         # Ожидаемый результат (пустой список)
         assert result == []
+        
