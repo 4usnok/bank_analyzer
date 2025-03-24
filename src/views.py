@@ -74,10 +74,10 @@ def for_each_card(time_str: str) -> list:
         # Фильтруем данные по дате
         filtered_data = df[df["Дата операции"] == formatted_time_str]
         for _, row in filtered_data.iterrows():
-            if row['Дата операции'] == formatted_time_str:
-                num_card = row['Номер карты']  # последние 4 цифры карты
-                amount = row['Сумма операции с округлением']  # общая сумма расходов
-                cashback = row['Сумма операции с округлением'] // 100  # кешбэк (1 рубль на каждые 100 рублей)
+            if row["Дата операции"] == formatted_time_str:
+                num_card = row["Номер карты"]  # последние 4 цифры карты
+                amount = row["Сумма операции с округлением"]  # общая сумма расходов
+                cashback = row["Сумма операции с округлением"] // 100  # кешбэк (1 рубль на каждые 100 рублей)
                 none_list.append({"last_digits": num_card, "total_spent": amount, "cashback": cashback})
     except Exception as e:
         views_logger.error(f"Ошибка при обработке данных карт: {e}")
@@ -120,6 +120,7 @@ def top_trans(end_date: str) -> list:
 def cur_proc(date_str: str):
     """Функция API валют"""
     views_logger.info(f"Получение курсов валют для даты: {date_str}")
+
     # В функции `cur_proc` использовал https://fixer.io/
     def exchange_rates():
         """Функция выводит курс валют"""
@@ -149,6 +150,7 @@ def stock_processing(date_str: str) -> list:
     """Функция API акций"""
     # В функции `stock_processing` использовал https://finance.yahoo.com/
     views_logger.info(f"Получение данных акций для даты: {date_str}")
+
     def stock_prices():
         """Функция выводит стоимость акций из S&P500."""
         list_stock = []

@@ -1,9 +1,10 @@
-import os
-import logging
 import functools
-import pandas as pd
+import logging
+import os
 from datetime import timedelta
 from typing import Callable, Optional
+
+import pandas as pd
 from dotenv import load_dotenv
 
 # Загружаем переменные окружения
@@ -74,31 +75,24 @@ def export_to_file(filename: Optional[str] = None):
 
 
 @export_to_file(filename="../reports_save.json")
-def function_for_generating(
-        transactions: pd.DataFrame, category: str, date: Optional[str] = None
-) -> pd.DataFrame:
+def function_for_generating(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
     """
     Функция для формирования отчёта по тратам в определённой категории
     за последние три месяца.
     """
     reports_logger.info(
-        f"Начало выполнения функции function_for_generating "
-        f"для категории '{category}' и даты '{date}'"
+        f"Начало выполнения функции function_for_generating " f"для категории '{category}' и даты '{date}'"
     )
 
     # Фильтруем по категории
     filtering_by_category = transactions[transactions["Категория"] == category].copy()
-    reports_logger.info(
-        f"Найдено {len(filtering_by_category)} записей по категории '{category}'"
-    )
+    reports_logger.info(f"Найдено {len(filtering_by_category)} записей по категории '{category}'")
 
     # Если дата передана, фильтруем за последние три месяца
     if date:
         current_date = pd.to_datetime(date, format="%d.%m.%Y %H:%M:%S")
         three_months_ago = current_date - timedelta(days=90)
-        reports_logger.info(
-            f"Текущая дата: {current_date}, три месяца назад: {three_months_ago}"
-        )
+        reports_logger.info(f"Текущая дата: {current_date}, три месяца назад: {three_months_ago}")
 
         # Преобразуем столбец 'Дата операции' в datetime
         filtering_by_category.loc[:, "Дата операции"] = pd.to_datetime(
@@ -109,18 +103,12 @@ def function_for_generating(
         filtering_by_category = filtering_by_category[
             (filtering_by_category["Дата операции"] >= three_months_ago)
             & (filtering_by_category["Дата операции"] <= current_date)
-            ]
-        reports_logger.info(
-            f"Найдено {len(filtering_by_category)} записей за последние три месяца"
-        )
+        ]
+        reports_logger.info(f"Найдено {len(filtering_by_category)} записей за последние три месяца")
 
     # Фильтруем по тратам (сумма операции < 0)
-    filtering_by_spending = filtering_by_category[
-        filtering_by_category["Сумма операции"] < 0
-        ]
-    reports_logger.info(
-        f"Найдено {len(filtering_by_spending)} записей с тратами"
-    )
+    filtering_by_spending = filtering_by_category[filtering_by_category["Сумма операции"] < 0]
+    reports_logger.info(f"Найдено {len(filtering_by_spending)} записей с тратами")
 
     return filtering_by_spending
 

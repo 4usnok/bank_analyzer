@@ -1,9 +1,10 @@
-import os
-from dotenv import load_dotenv
 import json
+import logging
+import os
 from datetime import datetime
 from functools import reduce
-import logging
+
+from dotenv import load_dotenv
 
 # Загружаем переменные окружения
 load_dotenv()
@@ -35,7 +36,7 @@ def filter_transactions_by_date(transactions, month_input, year_input):
     def filter_fn(transaction):
         try:
             # Преобразуем строку в объект datetime
-            date_obj = datetime.strptime(transaction['Дата операции'], '%d.%m.%Y %H:%M:%S')
+            date_obj = datetime.strptime(transaction["Дата операции"], "%d.%m.%Y %H:%M:%S")
             # Забираем из даты месяц и год
             return date_obj.month == month_input and date_obj.year == year_input
         except (KeyError, ValueError) as e:
@@ -57,8 +58,8 @@ def sum_cashback_by_category(transactions):
     def reduce_fn(acc, transaction):
         try:
             # Забираем из файла необходимые значения
-            category = transaction['Категория']
-            cashback = int(transaction['Бонусы (включая кэшбэк)'])
+            category = transaction["Категория"]
+            cashback = int(transaction["Бонусы (включая кэшбэк)"])
             acc[category] = acc.get(category, 0) + cashback
         except (KeyError, ValueError) as e:
             services_logger.error(f"Ошибка при обработке транзакции: {e}")
