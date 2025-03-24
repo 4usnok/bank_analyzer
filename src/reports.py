@@ -10,11 +10,10 @@ from dotenv import load_dotenv
 # Загружаем переменные окружения
 load_dotenv()
 
-path_to_save = os.getenv("PATH_TO_REPORTS_SAVE")
-
 # Переменные окружения
-path_to_xlsx = os.getenv("PATH_TO_XLSX")  # Путь к файлу с транзакциями
-path_to_logs = os.getenv("PATH_TO_LOGS")  # Путь к файлу логов
+path_to_xlsx = os.getenv("PATH_TO_XLSX")  # "../data/operations.xlsx"
+path_to_logs = os.getenv("PATH_TO_LOGS")  # "../logs/app.log"
+path_to_save = os.getenv("PATH_TO_REPORTS_SAVE") # "../reports_save.json"
 
 # Настройка логирования
 reports_logger = logging.getLogger("reports")
@@ -23,6 +22,7 @@ reports_logger = logging.getLogger("reports")
 log_directory = os.path.dirname(path_to_logs)
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
+
 
 # Очистка существующих обработчиков (если они есть)
 reports_logger.handlers.clear()
