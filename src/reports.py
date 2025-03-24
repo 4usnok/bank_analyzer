@@ -10,6 +10,8 @@ from dotenv import load_dotenv
 # Загружаем переменные окружения
 load_dotenv()
 
+path_to_save = os.getenv("PATH_TO_REPORTS_SAVE")
+
 # Переменные окружения
 path_to_xlsx = os.getenv("PATH_TO_XLSX")  # Путь к файлу с транзакциями
 path_to_logs = os.getenv("PATH_TO_LOGS")  # Путь к файлу логов
@@ -74,7 +76,7 @@ def export_to_file(filename: Optional[str] = None):
     return decorator
 
 
-@export_to_file(filename="../reports_save.json")
+@export_to_file(filename=path_to_save)
 def function_for_generating(transactions: pd.DataFrame, category: str, date: Optional[str] = None) -> pd.DataFrame:
     """
     Функция для формирования отчёта по тратам в определённой категории
