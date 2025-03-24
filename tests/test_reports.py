@@ -1,49 +1,66 @@
-import json
+import unittest
 import pandas as pd
-import pytest
-from src.reports import function_for_generating  # Замените your_module на имя вашего файла
+from datetime import datetime, timedelta
+from src.reports import function_for_generating
 
-# Фикстура для тестового DataFrame
-@pytest.fixture
-def sample_transactions():
-    # Тестовые данные
-    test_data = {
-        "Дата операции": [
-            "01.10.2023 12:00:00", "15.11.2023 14:30:00", "20.12.2023 10:00:00",
-            "05.09.2023 09:00:00", "25.12.2023 18:00:00"
-        ],
-        "Категория": [
-            "Супермаркет", "Ресторан", "Супермаркет", "Транспорт", "Супермаркет"
-        ],
-        "Сумма": [100.0, 200.0, 150.0, 50.0, 300.0]
-    }
-    return pd.DataFrame(test_data)
+class TestFunctionForGenerating(unittest.TestCase):
+    def setUp(self):
+        """
+        Подготовка тестовых данных.
+        """
+        self.transactions = pd.DataFrame({
+            "Дата операции": [
+                "01.12.2021 10:15:30", "15.12.2021 18:30:45", "20.11.2021 12:00:00",
+                "25.12.2021 14:45:00", "01.09.2021 10:15:30"
+            ],
+            "Категория": [
+                "Супермаркеты", "Супермаркеты", "АЗС", "Рестораны", "Супермаркеты"
+            ],
+            "Сумма операции": [-500, -300, 200, -200, -100]  # Отрицательные значения — траты
+        })
 
-# Тест 1: Проверка фильтрации по категории без указания даты
-def test_filter_by_category(sample_transactions):
-    result = function_for_generating(sample_transactions, "Супермаркет")
-    result_data = json.loads(result)  # Преобразуем JSON в Python-объект
-    assert any(item["Категория"] == "Супермаркет" for item in result_data)  # Проверяем наличие категории
+    def test_filter_by_category(self):
+        """
+        Тест фильтрации по категории.
+        """
+        result = function_for_generating(self.transactions, "Супермаркеты")
+        # Проверяем, что все строки в результате относятся к категории "Супермаркеты"
+        self.assertTrue((result["Категория"] == "Супермаркеты").all())
 
-# Тест 2: Проверка фильтрации по категории и дате
-def test_filter_by_category_and_date(sample_transactions):
-    result = function_for_generating(sample_transactions, "Супермаркет", "25.12.2023 18:00:00")
-    result_data = json.loads(result)  # Преобразуем JSON в Python-объект
-    assert any(
-        item["Категория"] == "Супермаркет" and "2023-12-25" in item["Дата операции"]
-        for item in result_data
-    )
+    def test_filter_by_date(self):
+        """
+        Тест фильтрации по дате.
+        """
+        result = function_for_generating(self.transactions, "Супермаркеты", "01.12.2021 10:15:30")
+        # Проверяем, что все строки в результате относятся к последним трём месяцам
+        current_date = datetime.strptime("01.12.2021 10:15:30", "%d.%m.%Y %H:%M:%S")
+        three_months_ago = current_date - timedelta(days=90)
+        result_dates = pd.to_datetime(result["Дата операции"], format="%d.%m.%Y %H:%M:%S")
+        self.assertTrue((result_dates >= three_months_ago).all())
+        self.assertTrue((result_dates <= current_date).all())
 
-# Тест 3: Проверка на отсутствие данных по категории
-def test_no_data_for_category(sample_transactions):
-    result = function_for_generating(sample_transactions, "Кино")
-    result_data = json.loads(result)  # Преобразуем JSON в Python-объект
-    assert "error" in result_data  # Проверяем наличие ключа "error"
-    assert result_data["error"] == "Категория 'Кино' не найдена."  # Проверяем сообщение об ошибке
+    def test_filter_by_spending(self):
+        """
+        Тест фильтрации по тратам (сумма операции < 0).
+        """
+        result = function_for_generating(self.transactions, "Супермаркеты")
+        # Проверяем, что все суммы операций отрицательные
+        self.assertTrue((result["Сумма операции"] < 0).all())
 
-# Тест 4: Проверка на отсутствие данных за последние три месяца
-def test_no_data_for_last_three_months(sample_transactions):
-    result = function_for_generating(sample_transactions, "Транспорт", "25.12.2023 18:00:00")
-    result_data = json.loads(result)  # Преобразуем JSON в Python-объект
-    assert "error" in result_data  # Проверяем наличие ключа "error"
-    assert result_data["error"] == "Данные по категории 'Транспорт' за последние три месяца не найдены."  # Проверяем сообщение об ошибке
+    def test_no_data_found(self):
+        """
+        Тест для случая, когда данные отсутствуют.
+        """
+        result = function_for_generating(self.transactions, "Несуществующая категория")
+        # Проверяем, что результат пустой
+        self.assertTrue(result.empty)
+
+    def test_no_date_provided(self):
+        """
+        Тест для случая, когда дата не передана.
+        """
+        result = function_for_generating(self.transactions, "Супермаркеты")
+        # Проверяем, что все строки относятся к категории "Супермаркеты"
+        self.assertTrue((result["Категория"] == "Супермаркеты").all())
+        # Проверяем, что все суммы операций отрицательные
+        self.assertTrue((result["Сумма операции"] < 0).all())

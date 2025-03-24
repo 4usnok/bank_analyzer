@@ -30,17 +30,15 @@ file_handler = logging.FileHandler(path_to_logs, mode="w", encoding="utf-8")
 file_formater = logging.Formatter("%(asctime)s - %(name)s: %(funcName)s - %(levelname)s: %(message)s")
 file_handler.setFormatter(file_formater)  # Исправлено: передаем file_formater
 views_logger.addHandler(file_handler)
-# Обработчик для вывода логов в консоль (опционально)
-console_handler = logging.StreamHandler()
-console_handler.setFormatter(file_formater)
-views_logger.addHandler(console_handler)
 # Установка уровня логирования
 views_logger.setLevel(logging.DEBUG)
+# Логируем успешную настройку логирования
+views_logger.info("Настройка логирования для views прошла успешно")
 
 
 def greetings(time_str: str) -> str:
     """Функция выводит приветствие, в зависимости от периода времени"""
-    logging.info(f"Определение приветствия для времени: {time_str}")
+    views_logger.info(f"Определение приветствия для времени: {time_str}")
     # Преобразуем строку в объект используя obj_datetime из utils.py
     time_obj = obj_datetime(time_str).time()
     # Определяем временные периоды
@@ -65,7 +63,7 @@ def for_each_card(time_str: str) -> list:
     2) общая сумма расходов;
     3) кешбэк (1 рубль на каждые 100 рублей).
     """
-    logging.info(f"Обработка данных карт для времени: {time_str}")
+    views_logger.info(f"Обработка данных карт для времени: {time_str}")
     none_list = []
     try:
         # Используем pandas для чтения Excel
@@ -82,13 +80,13 @@ def for_each_card(time_str: str) -> list:
                 cashback = row['Сумма операции с округлением'] // 100  # кешбэк (1 рубль на каждые 100 рублей)
                 none_list.append({"last_digits": num_card, "total_spent": amount, "cashback": cashback})
     except Exception as e:
-        logging.error(f"Ошибка при обработке данных карт: {e}")
+        views_logger.error(f"Ошибка при обработке данных карт: {e}")
     return none_list
 
 
 def top_trans(end_date: str) -> list:
     """Функция выводит топ-5 транзакций по сумме платежа в диапазоне от начала месяца до заданной даты."""
-    logging.info(f"Поиск топ-5 транзакций до даты: {end_date}")
+    views_logger.info(f"Поиск топ-5 транзакций до даты: {end_date}")
     top_list = []
     try:
         # Используем pandas для чтения Excel
@@ -115,13 +113,13 @@ def top_trans(end_date: str) -> list:
                 }
             )
     except Exception as e:
-        logging.error(f"Ошибка при поиске топ-5 транзакций: {e}")
+        views_logger.error(f"Ошибка при поиске топ-5 транзакций: {e}")
     return top_list
 
 
 def cur_proc(date_str: str):
     """Функция API валют"""
-    logging.info(f"Получение курсов валют для даты: {date_str}")
+    views_logger.info(f"Получение курсов валют для даты: {date_str}")
     # В функции `cur_proc` использовал https://fixer.io/
     def exchange_rates():
         """Функция выводит курс валют"""
@@ -150,7 +148,7 @@ def cur_proc(date_str: str):
 def stock_processing(date_str: str) -> list:
     """Функция API акций"""
     # В функции `stock_processing` использовал https://finance.yahoo.com/
-    logging.info(f"Получение данных акций для даты: {date_str}")
+    views_logger.info(f"Получение данных акций для даты: {date_str}")
     def stock_prices():
         """Функция выводит стоимость акций из S&P500."""
         list_stock = []
@@ -178,7 +176,7 @@ def stock_processing(date_str: str) -> list:
 
 def main_views(time_str: str) -> str:
     """Управляющая функция."""
-    logging.info(f"Запуск управляющей функции для времени: {time_str}")
+    views_logger.info(f"Запуск управляющей функции для времени: {time_str}")
     greeting = greetings(time_str)
     cards = for_each_card(time_str)
     top_transactions = top_trans(time_str)
@@ -191,5 +189,5 @@ def main_views(time_str: str) -> str:
         "currency_rates": currency_rates,
         "stock_prices": stock_prices,
     }
-    logging.info("Управляющая функция завершена успешно.")
+    views_logger.info("Управляющая функция завершена успешно.")
     return json.dumps(response, ensure_ascii=False, indent=4)

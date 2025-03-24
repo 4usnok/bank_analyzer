@@ -1,6 +1,6 @@
 import pytest
-from unittest.mock import patch, MagicMock, mock_open
-from datetime import datetime, time
+from unittest.mock import patch, MagicMock
+from datetime import datetime
 import pandas as pd
 from src.views import greetings, for_each_card, top_trans, cur_proc, stock_processing, main_views
 import json

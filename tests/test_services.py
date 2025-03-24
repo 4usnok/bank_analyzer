@@ -1,76 +1,62 @@
-import pytest
-from unittest.mock import patch, MagicMock
+import unittest
 import json
-from src.services import favorable_categories_of_increased_cashback  # Импортируйте вашу функцию
-
-
-# Фикстура для мока os.path.exists
-@pytest.fixture
-def mock_os_path_exists(mocker):
-    """Фикстура для мока os.path.exists."""
-    with patch("openpyxl.load_workbook") as mock_exists:
-        yield mock_exists
-
-
-# Параметризация для тестирования разных сценариев
-@pytest.mark.parametrize(
-    "month, year, file_path, expected_result",
-    [
-        (10, 2021, "fake_file.xlsx", "{}"),  # Файл не существует
-        (10, 2021, "none_file.xlsx", "{}"),  # Другой несуществующий файл
-    ],
+from datetime import datetime
+from src.services import (
+    filter_transactions_by_date,
+    sum_cashback_by_category,
+    favorable_categories_of_increased_cashback,
 )
-def test_file_not_found(mock_os_path_exists, month, year, file_path, expected_result):
-    """
-    Тестирование на случай отсутствия файла.
-    Проверяем, что функция возвращает пустой JSON, если файл не существует.
-    """
-    # Настраиваем мок, чтобы он возвращал False (файл не существует)
-    mock_os_path_exists.return_value = False
 
-    # Вызываем функцию
-    result = favorable_categories_of_increased_cashback(month, year, file_path)
-
-    # Проверяем, что результат соответствует ожидаемому
-    assert result == expected_result
-
-
-def test_file_json():
-    """Тестирование обработки фейкового Excel-файла и возврата JSON."""
-    # Мокируем openpyxl.load_workbook
-    with patch("openpyxl.load_workbook") as mock_load_workbook:
-        # Создаем мок для книги и листа
-        mock_book = MagicMock()
-        mock_sheet = MagicMock()
-
-        # Настраиваем мок для возврата данных
-        mock_sheet.max_row = 3  # Две строки данных (первая строка — заголовок)
-        mock_sheet.cell.side_effect = [
-            # Первая строка данных
-            MagicMock(value="Категория1"),  # cat_find (столбец J)
-            MagicMock(value=0.1),  # pay_find (столбец M)
-            MagicMock(value=100),  # amount_find (столбец G)
-            MagicMock(value="01.10.2023"),  # date_find (столбец B)
-            # Вторая строка данных
-            MagicMock(value="Категория2"),  # cat_find (столбец J)
-            MagicMock(value=0.2),  # pay_find (столбец M)
-            MagicMock(value=200),  # amount_find (столбец G)
-            MagicMock(value="01.10.2023"),  # date_find (столбец B)
+class TestReports(unittest.TestCase):
+    def setUp(self):
+        """
+        Подготовка тестовых данных.
+        """
+        self.transactions = [
+            {"Дата операции": "01.12.2021 10:15:30", "Категория": "Супермаркеты", "Бонусы (включая кэшбэк)": 100},
+            {"Дата операции": "15.12.2021 18:30:45", "Категория": "Супермаркеты", "Бонусы (включая кэшбэк)": 200},
+            {"Дата операции": "20.11.2021 12:00:00", "Категория": "АЗС", "Бонусы (включая кэшбэк)": 50},
+            {"Дата операции": "25.12.2021 14:45:00", "Категория": "Рестораны", "Бонусы (включая кэшбэк)": 150},
+            {"Дата операции": "01.09.2021 10:15:30", "Категория": "Супермаркеты", "Бонусы (включая кэшбэк)": 300},
         ]
-        # Настраиваем мок для книги
-        mock_book.active = mock_sheet  # book.active вернёт mock_sheet
-        mock_load_workbook.return_value = mock_book  # load_workbook вернёт mock_book
 
-        # Вызываем функцию
-        result = favorable_categories_of_increased_cashback(10, 2023, "fake_file.xlsx")
+    def test_filter_transactions_by_date(self):
+        """
+        Тест фильтрации транзакций по дате.
+        """
+        filtered = filter_transactions_by_date(self.transactions, 12, 2021)
+        # Проверяем, что отфильтровано 3 транзакции за декабрь 2021 года
+        self.assertEqual(len(filtered), 3)
+        # Проверяем, что все транзакции относятся к декабрю 2021 года
+        for transaction in filtered:
+            date_obj = datetime.strptime(transaction["Дата операции"], "%d.%m.%Y %H:%M:%S")
+            self.assertEqual(date_obj.month, 12)
+            self.assertEqual(date_obj.year, 2021)
 
-        # Ожидаемый JSON
-        expected_json = '''{
-            "Категория1": -10,
-            "Категория2": -40
-        }'''
+    def test_sum_cashback_by_category(self):
+        """
+        Тест суммирования кешбэка по категориям.
+        """
+        result = sum_cashback_by_category(self.transactions)
+        # Проверяем, что кешбэк по категориям суммирован правильно
+        self.assertEqual(result, {
+            "Супермаркеты": 600,  # 100 + 200 + 300
+            "АЗС": 50,
+            "Рестораны": 150,
+        })
 
-        # Преобразуем JSON в словари и сравниваем
-        expected_dict = json.loads(expected_json)
+    def test_favorable_categories_of_increased_cashback(self):
+        """
+        Тест основной функции.
+        """
+        result = favorable_categories_of_increased_cashback(12, 2021, self.transactions)
+        # Преобразуем JSON в словарь для проверки
         result_dict = json.loads(result)
-        assert result_dict == expected_dict
+        # Проверяем, что результат содержит правильные суммы кешбэка
+        self.assertEqual(result_dict, {
+            "Супермаркеты": 300,  # 100 + 200 (только за декабрь 2021)
+            "Рестораны": 150,
+        })
+
+if __name__ == "__main__":
+    unittest.main()
