@@ -2,7 +2,7 @@ import functools
 import logging
 import os
 from datetime import timedelta
-from typing import Callable, Optional
+from typing import Callable, Optional, Any
 
 import pandas as pd
 from dotenv import load_dotenv
@@ -13,7 +13,7 @@ load_dotenv()
 # Переменные окружения
 path_to_xlsx = os.getenv("PATH_TO_XLSX")  # "../data/operations.xlsx"
 path_to_logs = os.getenv("PATH_TO_LOGS")  # "../logs/app.log"
-path_to_save = os.getenv("PATH_TO_REPORTS_SAVE") # "../reports_save.json"
+path_to_save = os.getenv("PATH_TO_REPORTS_SAVE")  # "../reports_save.json"
 
 # Настройка логирования
 reports_logger = logging.getLogger("reports")
@@ -40,15 +40,15 @@ reports_logger.setLevel(logging.DEBUG)
 reports_logger.info("Настройка логирования для reports прошла успешно")
 
 
-def export_to_file(filename: Optional[str] = None):
+def export_to_file(filename: Optional[str] = None) -> Any:
     """
     Декоратор для экспорта результата функции в файл.
     Поддерживает JSON, CSV и Excel.
     """
 
-    def decorator(func: Callable):
+    def decorator(func: Callable) -> Any:
         @functools.wraps(func)
-        def wrapper(*args, **kwargs):
+        def wrapper(*args: str, **kwargs: str) -> Any:
             # Вызываем оригинальную функцию
             result = func(*args, **kwargs)
 

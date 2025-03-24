@@ -3,6 +3,7 @@ import logging
 import os
 from datetime import datetime
 from functools import reduce
+from typing import Any
 
 from dotenv import load_dotenv
 
@@ -27,13 +28,13 @@ services_logger.setLevel(logging.DEBUG)
 services_logger.info("Настройка логирования для services прошла успешно")
 
 
-def filter_transactions_by_date(transactions, month_input, year_input):
+def filter_transactions_by_date(transactions: Any, month_input: int, year_input: int) -> Any:
     """
     Фильтрует транзакции по месяцу и году.
     """
     services_logger.info("Начало выполнения функции filter_transactions_by_date")
 
-    def filter_fn(transaction):
+    def filter_fn(transaction: Any) -> Any:
         try:
             # Преобразуем строку в объект datetime
             date_obj = datetime.strptime(transaction["Дата операции"], "%d.%m.%Y %H:%M:%S")
@@ -49,13 +50,13 @@ def filter_transactions_by_date(transactions, month_input, year_input):
     return filtered_transactions
 
 
-def sum_cashback_by_category(transactions):
+def sum_cashback_by_category(transactions: Any) -> Any:
     """
     Суммирует кешбэк по категориям.
     """
     services_logger.info("Начало выполнения функции sum_cashback_by_category")
 
-    def reduce_fn(acc, transaction):
+    def reduce_fn(acc: Any, transaction: Any) -> Any:
         try:
             # Забираем из файла необходимые значения
             category = transaction["Категория"]
@@ -71,7 +72,7 @@ def sum_cashback_by_category(transactions):
     return category_cashback
 
 
-def favorable_categories_of_increased_cashback(month_input, year_input, list_input):
+def favorable_categories_of_increased_cashback(month_input: int, year_input: int, list_input: Any) -> Any:
     """
     Основная функция.
     """

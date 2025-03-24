@@ -7,6 +7,7 @@ import pandas as pd
 import requests
 import yfinance as yf
 from dotenv import load_dotenv
+from typing import Any
 
 from src.utils import json_read, obj_datetime
 
@@ -117,12 +118,12 @@ def top_trans(end_date: str) -> list:
     return top_list
 
 
-def cur_proc(date_str: str):
+def cur_proc(date_str: str) -> Any:
     """Функция API валют"""
     views_logger.info(f"Получение курсов валют для даты: {date_str}")
 
     # В функции `cur_proc` использовал https://fixer.io/
-    def exchange_rates():
+    def exchange_rates() -> Any:
         """Функция выводит курс валют"""
         list_api = []
         list_currency = []
@@ -151,7 +152,7 @@ def stock_processing(date_str: str) -> list:
     # В функции `stock_processing` использовал https://finance.yahoo.com/
     views_logger.info(f"Получение данных акций для даты: {date_str}")
 
-    def stock_prices():
+    def stock_prices() -> list:
         """Функция выводит стоимость акций из S&P500."""
         list_stock = []
         # Преобразуем строку в объект используя obj_datetime из utils.py
