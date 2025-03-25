@@ -1,12 +1,11 @@
 import functools
 import logging
 import os
-from datetime import timedelta
 from typing import Callable, Optional, Any
 
 import pandas as pd
 
-# Относительные пути для файлов
+# Настройки и инициализация
 path_to_xlsx = "../data/operations.xlsx"
 path_to_logs = "../logs/app.log"
 path_to_save = "../reports_save.json"
@@ -89,7 +88,7 @@ def function_for_generating(transactions: pd.DataFrame, category: str, date: Opt
     # Если дата передана, фильтруем за последние три месяца
     if date:
         current_date = pd.to_datetime(date, format="%d.%m.%Y %H:%M:%S")
-        three_months_ago = current_date - timedelta(days=90)
+        three_months_ago = current_date - pd.DateOffset(months=3)
         reports_logger.info(f"Текущая дата: {current_date}, три месяца назад: {three_months_ago}")
 
         # Преобразуем столбец 'Дата операции' в datetime
