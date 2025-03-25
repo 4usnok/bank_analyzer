@@ -2,23 +2,25 @@ import json
 import logging
 import os
 from datetime import time, timedelta
+from typing import Any
 
 import pandas as pd
 import requests
-import yfinance as yf
+import yfinance as yf  # type: ignore  # Добавляем игнорирование проверки типов
 from dotenv import load_dotenv
-from typing import Any
 
 from src.utils import json_read, obj_datetime
 
 load_dotenv(dotenv_path="../.env")
 
 # Переменные окружения
-api_key = os.getenv("API_KEY_CUR")
-path_to_set = os.getenv("PATH_TO_US_SET")  # "user_settings.json"
-path_to_xlsx = os.getenv("PATH_TO_XLSX")  # "data/operations.xlsx"
-path_to_logs = os.getenv("PATH_TO_LOGS")  # "../logs/app.log"
 base_url = os.getenv("BASE_URL")
+api_key = os.getenv("API_KEY_CUR")
+# Относительные пути для файлов
+path_to_set = "user_settings.json"
+path_to_xlsx = "data/operations.xlsx"
+path_to_logs = "../logs/app.log"
+
 
 # Настройка логирования
 views_logger = logging.getLogger("views")

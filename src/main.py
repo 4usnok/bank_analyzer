@@ -1,16 +1,11 @@
-import os
-
 import pandas as pd
-from dotenv import load_dotenv
 
 from src.reports import function_for_generating
 from src.services import favorable_categories_of_increased_cashback
 from src.views import main_views
 
-# Загружаем переменные окружения
-load_dotenv()
-# Переменная окружения
-path_to_xlsx = os.getenv("PATH_TO_XLSX")
+# Относительные пути для файлов
+path_to_xlsx = "../data/operations.xlsx"
 
 # Проверка модуля views для задания: Веб-страницы
 print(main_views("2021-12-31 16:44:00"))

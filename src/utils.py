@@ -1,20 +1,15 @@
 import json
-import os
 from datetime import datetime
 from typing import Any
 
-from dotenv import load_dotenv
-
-load_dotenv()
-
-path_to_xlsx = os.getenv("PATH_TO_US_SET")
+# Относительные пути для файлов
+path_to_xlsx = "../user_settings.json"
 
 
-def json_read(file: str) -> Any:
+def json_read(file_path: str) -> Any:
     """Чтение файла с настройками"""
     with open(path_to_xlsx, "r", encoding="utf-8") as file:
-        data_file = json.load(file)
-    return data_file
+        return json.load(file)
 
 
 def obj_datetime(date: str) -> Any:

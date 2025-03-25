@@ -5,12 +5,10 @@ from datetime import datetime
 from functools import reduce
 from typing import Any
 
-from dotenv import load_dotenv
+# Относительные пути для файлов
+path_to_xlsx = "../data/operations.xlsx"
+path_to_logs = "../logs/app.log"
 
-# Загружаем переменные окружения
-load_dotenv()
-path_to_xlsx = os.getenv("PATH_TO_XLSX")
-path_to_logs = os.getenv("PATH_TO_LOGS")
 # Настройка логирования
 services_logger = logging.getLogger("reports")
 # Проверка и создание директории для логов, если она не существует
@@ -67,7 +65,7 @@ def sum_cashback_by_category(transactions: Any) -> Any:
         return acc
 
     # Применяем для суммирования функцию высшего порядка
-    category_cashback = reduce(reduce_fn, transactions, {})
+    category_cashback: dict[str, float] = reduce(reduce_fn, transactions, {})
     services_logger.info(f"Суммирование завершено. Категории: {category_cashback}")
     return category_cashback
 

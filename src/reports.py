@@ -5,15 +5,11 @@ from datetime import timedelta
 from typing import Callable, Optional, Any
 
 import pandas as pd
-from dotenv import load_dotenv
 
-# Загружаем переменные окружения
-load_dotenv()
-
-# Переменные окружения
-path_to_xlsx = os.getenv("PATH_TO_XLSX")  # "../data/operations.xlsx"
-path_to_logs = os.getenv("PATH_TO_LOGS")  # "../logs/app.log"
-path_to_save = os.getenv("PATH_TO_REPORTS_SAVE")  # "../reports_save.json"
+# Относительные пути для файлов
+path_to_xlsx = "../data/operations.xlsx"
+path_to_logs = "../logs/app.log"
+path_to_save = "../reports_save.json"
 
 # Настройка логирования
 reports_logger = logging.getLogger("reports")
