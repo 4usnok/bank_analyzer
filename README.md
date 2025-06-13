@@ -8,7 +8,7 @@
 
 1. Клонируйте репозиторий:
 ```
-git clone git@github.com:4usnok/4usnok-Skypro_python_prj1.git
+git clone https://github.com/4usnok/Project_1_Bank_analyzer.git
 ```
 2. Установите зависимости:
 ```
